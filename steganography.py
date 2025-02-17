@@ -32,7 +32,10 @@ def binary_to_message(binary_data):
 
 # Encode message into image using LSB
 def encode_message():
-    image_path = "avengersinfinity.jpg"  # Cover image
+    image_path = filedialog.askopenfilename(title="Select an Image", filetypes=[("Image Files", "*.jpg;*.png")])
+    if not image_path:
+        return  # Exit if no file selected
+
     message = simpledialog.askstring("Input", "Enter the message to hide:")
     password = simpledialog.askstring("Input", "Enter a security key (password):")
 
@@ -40,6 +43,10 @@ def encode_message():
     binary_message = message_to_binary(encrypted_message) + '1111111111111110'  # End marker
 
     image = cv2.imread(image_path)
+    if image is None:
+        messagebox.showerror("Error", "Failed to load image!")
+        return
+
     img_data = image.flatten()
 
     data_index = 0
@@ -57,18 +64,25 @@ def encode_message():
 
 # Decode message from image
 def decode_message():
-    image_path = "encoded_image.png"
+    image_path = filedialog.askopenfilename(title="Select Encoded Image", filetypes=[("Image Files", "*.png;*.jpg")])
+    if not image_path:
+        return  # Exit if no file selected
+
     password = simpledialog.askstring("Input", "Enter the security key (password):")
 
     image = cv2.imread(image_path)
+    if image is None:
+        messagebox.showerror("Error", "Failed to load image!")
+        return
+
     binary_data = ''.join(str(pixel & 1) for pixel in image.flatten())
 
     try:
         encrypted_message = binary_to_message(binary_data)
         decrypted_message = decrypt_message(encrypted_message, password)
         messagebox.showinfo("Decoded Message", f"Hidden Message: {decrypted_message}")
-    except:
-        messagebox.showerror("Error", "Incorrect key or corrupted image!")
+    except Exception as e:
+        messagebox.showerror("Error", f"Decryption or image error: {str(e)}")
 
 # GUI Application
 root = tk.Tk()
