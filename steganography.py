@@ -1,29 +1,18 @@
 import cv2
-import numpy as np
+import os
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 from cryptography.fernet import Fernet
-import os
 
 # Function to generate encryption key based on user input
 def generate_key(password):
     key = Fernet.generate_key()
-    hashed_key = password.ljust(32)[:32].encode()  # Ensure 32-byte key
     return Fernet(key)
 
 # Encrypt message using AES with user key
 def encrypt_message(message, password):
     cipher = generate_key(password)
     return cipher.encrypt(message.encode()).decode()
-
-# Decrypt message using AES with user key
-def decrypt_message(encrypted_message, password):
-    cipher = generate_key(password)
-    try:
-        return cipher.decrypt(encrypted_message.encode()).decode()
-    except Exception as e:
-        print(f"Decryption error: {e}")
-        return None
 
 # Convert text to binary format
 def message_to_binary(message):
@@ -41,16 +30,23 @@ def binary_to_message(binary_data):
 # Encode message into image using LSB
 def encode_message():
     image_path = "avengersinfinity.jpg"  # Hardcoded image path
+    print(f"Attempting to load image from: {image_path}")
+    
+    # Check if the image file exists
+    if not os.path.exists(image_path):
+        messagebox.showerror("Error", f"Image file not found: {image_path}")
+        return
+
+    image = cv2.imread(image_path)
+    if image is None:
+        messagebox.showerror("Error", f"Failed to load image: {image_path}")
+        return
+
     message = simpledialog.askstring("Input", "Enter the message to hide:")
     password = simpledialog.askstring("Input", "Enter a security key (password):")
 
     encrypted_message = encrypt_message(message, password)
     binary_message = message_to_binary(encrypted_message) + '1111111111111110'  # End marker
-
-    image = cv2.imread(image_path)
-    if image is None:
-        messagebox.showerror("Error", "Failed to load image!")
-        return
 
     img_data = image.flatten()
 
@@ -70,11 +66,16 @@ def encode_message():
 # Decode message from image
 def decode_message():
     image_path = "encoded_image.png"  # Hardcoded encoded image path
-    password = simpledialog.askstring("Input", "Enter the security key (password):")
-
+    print(f"Attempting to load image from: {image_path}")
+    
+    # Check if the image file exists
+    if not os.path.exists(image_path):
+        messagebox.showerror("Error", f"Image file not found: {image_path}")
+        return
+    
     image = cv2.imread(image_path)
     if image is None:
-        messagebox.showerror("Error", "Failed to load image!")
+        messagebox.showerror("Error", f"Failed to load image: {image_path}")
         return
 
     binary_data = ''.join(str(pixel & 1) for pixel in image.flatten())
@@ -89,15 +90,28 @@ def decode_message():
         messagebox.showerror("Error", "Error decoding the binary data!")
         return
 
+    password = simpledialog.askstring("Input", "Enter the security key (password):")
     decrypted_message = decrypt_message(encrypted_message, password)
     if decrypted_message is None:
         messagebox.showerror("Error", "Incorrect password or decryption error!")
     else:
         messagebox.showinfo("Decoded Message", f"Hidden Message: {decrypted_message}")
 
+# Decrypt message using AES with user key
+def decrypt_message(encrypted_message, password):
+    cipher = generate_key(password)
+    try:
+        return cipher.decrypt(encrypted_message.encode()).decode()
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        return None
+
 # GUI Application
 root = tk.Tk()
 root.title("🔒 Image Steganography - Avengers")
+
+# Debugging: Check current working directory
+print(f"Current Working Directory: {os.getcwd()}")
 
 tk.Button(root, text="Encode Message", command=encode_message, width=20, height=2).pack(pady=10)
 tk.Button(root, text="Decode Message", command=decode_message, width=20, height=2).pack(pady=10)
