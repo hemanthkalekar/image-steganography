@@ -54,6 +54,7 @@ def encode_message():
     for i in range(len(img_data)):
         if data_index < len(binary_message):
             img_data[i] = (img_data[i] & ~1) | int(binary_message[data_index])
+            img_data[i] = min(max(img_data[i], 0), 255)  # Ensure pixel value is within uint8 range (0-255)
             data_index += 1
         else:
             break
