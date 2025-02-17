@@ -29,7 +29,7 @@ def binary_to_message(binary_data):
 
 # Encode message into image using LSB
 def encode_message():
-    image_path = "avengersinfinity.jpg"  # Hardcoded image path
+    image_path = "avengersinfinity.jpg"  # Hardcoded image path for encoding
     print(f"Attempting to load image from: {image_path}")
     
     # Check if the image file exists
@@ -61,17 +61,22 @@ def encode_message():
     encoded_image = img_data.reshape(image.shape)
     output_path = "encoded_image.png"
     cv2.imwrite(output_path, encoded_image)
-    messagebox.showinfo("Success", f"Message encoded successfully! Saved as {output_path}")
+
+    # Check if the image was saved
+    if os.path.exists(output_path):
+        messagebox.showinfo("Success", f"Message encoded successfully! Saved as {output_path}")
+    else:
+        messagebox.showerror("Error", "Failed to save the encoded image.")
 
 # Decode message from image
 def decode_message():
-    image_path = "encoded_image.png"  # Hardcoded encoded image path
-    print(f"Attempting to load image from: {image_path}")
-    
-    # Check if the image file exists
-    if not os.path.exists(image_path):
-        messagebox.showerror("Error", f"Image file not found: {image_path}")
+    # Check if the encoded image exists
+    if not os.path.exists("encoded_image.png"):
+        messagebox.showerror("Error", "Encoded image not found. Please encode a message first.")
         return
+
+    image_path = "encoded_image.png"  # Hardcoded encoded image path for decoding
+    print(f"Attempting to load image from: {image_path}")
     
     image = cv2.imread(image_path)
     if image is None:
