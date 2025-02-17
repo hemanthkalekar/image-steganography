@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import tkinter as tk
-from tkinter import filedialog, simpledialog, messagebox
+from tkinter import simpledialog, messagebox
 from cryptography.fernet import Fernet
 import os
 
@@ -19,7 +19,11 @@ def encrypt_message(message, password):
 # Decrypt message using AES with user key
 def decrypt_message(encrypted_message, password):
     cipher = generate_key(password)
-    return cipher.decrypt(encrypted_message.encode()).decode()
+    try:
+        return cipher.decrypt(encrypted_message.encode()).decode()
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        return None
 
 # Convert text to binary format
 def message_to_binary(message):
@@ -27,15 +31,16 @@ def message_to_binary(message):
 
 # Convert binary to text format
 def binary_to_message(binary_data):
-    message = ''.join(chr(int(binary_data[i:i+8], 2)) for i in range(0, len(binary_data), 8))
-    return message.split("1111111111111110")[0]  # Stop at end marker
+    try:
+        message = ''.join(chr(int(binary_data[i:i+8], 2)) for i in range(0, len(binary_data), 8))
+        return message.split("1111111111111110")[0]  # Stop at end marker
+    except Exception as e:
+        print(f"Binary to message error: {e}")
+        return None
 
 # Encode message into image using LSB
 def encode_message():
-    image_path = filedialog.askopenfilename(title="Select an Image", filetypes=[("Image Files", "*.jpg;*.png")])
-    if not image_path:
-        return  # Exit if no file selected
-
+    image_path = "avengersinfinity.jpg"  # Hardcoded image path
     message = simpledialog.askstring("Input", "Enter the message to hide:")
     password = simpledialog.askstring("Input", "Enter a security key (password):")
 
@@ -64,10 +69,7 @@ def encode_message():
 
 # Decode message from image
 def decode_message():
-    image_path = filedialog.askopenfilename(title="Select Encoded Image", filetypes=[("Image Files", "*.png;*.jpg")])
-    if not image_path:
-        return  # Exit if no file selected
-
+    image_path = "encoded_image.png"  # Hardcoded encoded image path
     password = simpledialog.askstring("Input", "Enter the security key (password):")
 
     image = cv2.imread(image_path)
@@ -76,13 +78,22 @@ def decode_message():
         return
 
     binary_data = ''.join(str(pixel & 1) for pixel in image.flatten())
+    if len(binary_data) == 0:
+        messagebox.showerror("Error", "No data found in image!")
+        return
 
-    try:
-        encrypted_message = binary_to_message(binary_data)
-        decrypted_message = decrypt_message(encrypted_message, password)
+    print(f"Binary Data Length: {len(binary_data)}")  # Debugging line
+
+    encrypted_message = binary_to_message(binary_data)
+    if encrypted_message is None:
+        messagebox.showerror("Error", "Error decoding the binary data!")
+        return
+
+    decrypted_message = decrypt_message(encrypted_message, password)
+    if decrypted_message is None:
+        messagebox.showerror("Error", "Incorrect password or decryption error!")
+    else:
         messagebox.showinfo("Decoded Message", f"Hidden Message: {decrypted_message}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Decryption or image error: {str(e)}")
 
 # GUI Application
 root = tk.Tk()
